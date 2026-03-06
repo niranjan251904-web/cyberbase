@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { events } from '../data/events'
+import { events as fallbackEvents } from '../data/events'
+import { getCollection, addDocument } from '../services/firestoreService'
 import GlassCard from '../components/ui/GlassCard'
 import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
@@ -72,6 +73,7 @@ function CountdownDisplay({ event }) {
 }
 
 export default function EventsPage() {
+    const [events, setEvents] = useState(fallbackEvents)
     const [statusFilter, setStatusFilter] = useState('all')
     const [typeFilter, setTypeFilter] = useState('all')
     const [detailEvent, setDetailEvent] = useState(null)
@@ -80,6 +82,10 @@ export default function EventsPage() {
     const [submitted, setSubmitted] = useState(false)
     const { addToast } = useApp()
     const sectionRef = useScrollReveal()
+
+    useEffect(() => {
+        getCollection('events').then((data) => { if (data.length) setEvents(data) }).catch(() => { })
+    }, [])
 
     const filtered = events.filter(e => {
         if (statusFilter !== 'all' && e.status !== statusFilter) return false

@@ -25,12 +25,16 @@ export default function AuthModal() {
 
     return (
         <Modal isOpen={showAuth} onClose={() => setShowAuth(false)} title={authMode === 'login' ? 'Welcome back' : 'Join CyberBase'} maxWidth="420px">
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4" autoComplete="off">
+
                 {authMode === 'signup' && (
-                    <input className="input-glass" placeholder="Full Name" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} required />
+                    <input className="input-glass" placeholder="Full Name" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} required autoComplete="new-name" name="signup-name" />
+
                 )}
-                <input className="input-glass" placeholder="Email" type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} required />
-                <input className="input-glass" placeholder="Password" type="password" value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))} required />
+                <input className="input-glass" placeholder="Email" type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} required autoComplete="new-email" name="auth-email" />
+
+                <input className="input-glass" placeholder="Password" type="password" value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))} required autoComplete="new-password" name="auth-password" />
+
                 <motion.div whileTap={{ scale: 0.97 }}>
                     <Button variant="primary" type="submit" className="w-full" disabled={loading}>
                         {loading ? '...' : authMode === 'login' ? 'Login →' : 'Create Account →'}

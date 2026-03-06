@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { teams as teamsData } from '../data/teams'
+import { teams as fallbackTeams } from '../data/teams'
+import { getCollection, addDocument } from '../services/firestoreService'
 import GlassCard from '../components/ui/GlassCard'
 import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
@@ -19,7 +20,7 @@ const itemVariants = {
 }
 
 export default function TeamsPage() {
-    const [teams, setTeams] = useState(teamsData)
+    const [teams, setTeams] = useState(fallbackTeams)
     const [createOpen, setCreateOpen] = useState(false)
     const [viewTeam, setViewTeam] = useState(null)
     const [joinedTeams, setJoinedTeams] = useState(new Set())
@@ -27,12 +28,16 @@ export default function TeamsPage() {
     const { addToast } = useApp()
     const sectionRef = useScrollReveal()
 
+    useEffect(() => {
+        getCollection('teams').then((data) => { if (data.length) setTeams(data) }).catch(() => { })
+    }, [])
+
     const handleJoin = (teamId) => {
         setJoinedTeams(prev => new Set([...prev, teamId]))
         addToast('Request sent! Team leader will review your application.')
     }
 
-    const handleCreate = (e) => {
+    const handleCreate = async (e) => {
         e.preventDefault()
         const newTeam = {
             id: Date.now(),
@@ -43,6 +48,9 @@ export default function TeamsPage() {
             pts: 0,
             description: formData.description,
         }
+        try {
+            await addDocument('teams', newTeam)
+        } catch (err) { /* continue with local state */ }
         setTeams(prev => [newTeam, ...prev])
         setCreateOpen(false)
         setFormData({ name: '', focus: '', description: '' })

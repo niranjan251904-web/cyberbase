@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { leaderboard } from '../data/leaderboard'
+import { leaderboard as fallbackLeaderboard } from '../data/leaderboard'
+import { getCollection } from '../services/firestoreService'
 import GlassCard from '../components/ui/GlassCard'
 import Badge from '../components/ui/Badge'
 import Avatar from '../components/ui/Avatar'
@@ -53,9 +55,14 @@ function ScoreBar({ score, maxScore }) {
 }
 
 export default function LeaderboardPage() {
+    const [leaderboard, setLeaderboard] = useState(fallbackLeaderboard)
     const [timeFilter, setTimeFilter] = useState('all')
     const [search, setSearch] = useState('')
     const sectionRef = useScrollReveal()
+
+    useEffect(() => {
+        getCollection('leaderboard').then((data) => { if (data.length) setLeaderboard(data) }).catch(() => { })
+    }, [])
 
     const getScore = (m) => {
         if (timeFilter === 'month') return m.pts_month
@@ -107,13 +114,13 @@ export default function LeaderboardPage() {
                                     <span className="absolute top-2 right-4 font-display text-[4rem] text-[rgba(247,247,251,0.06)] leading-none select-none">
                                         {i + 1}
                                     </span>
-                                    <div className="flex items-center gap-3 mb-3">
+                                    <Link to={`/member/${member.id}`} className="flex items-center gap-3 mb-3 group block">
                                         <Avatar initials={member.initials} size={48} />
                                         <div>
-                                            <h3 className="font-display text-[1.1rem] text-white">{member.name}</h3>
+                                            <h3 className="font-display text-[1.1rem] text-white group-hover:text-violet transition-colors">{member.name}</h3>
                                             <p className="font-sans text-[0.65rem] text-[rgba(247,247,251,0.40)]">{member.title}</p>
                                         </div>
-                                    </div>
+                                    </Link>
                                     <div className="font-display text-[1.6rem] text-white mb-2">
                                         {getScore(member).toLocaleString()}
                                         <span className="font-sans text-[0.6rem] text-[rgba(247,247,251,0.30)] ml-1">pts</span>
@@ -138,10 +145,14 @@ export default function LeaderboardPage() {
                                 whileHover={{ backgroundColor: 'rgba(247,247,251,0.04)', borderLeft: '2px solid #F7F7FB' }}
                             >
                                 <span className="font-display text-lg text-[rgba(247,247,251,0.20)] w-6 sm:w-8 text-center shrink-0">{i + 4}</span>
-                                <Avatar initials={member.initials} size={32} />
-                                <div className="flex-1 min-w-0">
-                                    <p className="font-sans text-[0.72rem] sm:text-[0.75rem] text-white truncate">{member.name}</p>
-                                    <p className="font-sans text-[0.55rem] sm:text-[0.6rem] text-[rgba(247,247,251,0.30)]">{member.title}</p>
+                                <div className="flex-1 min-w-0 flex items-center gap-3 sm:gap-4">
+                                    <Link to={`/member/${member.id}`} className="flex items-center gap-3 sm:gap-4 group min-w-0 w-full">
+                                        <Avatar initials={member.initials} size={32} />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-sans text-[0.72rem] sm:text-[0.75rem] text-white group-hover:text-violet transition-colors truncate">{member.name}</p>
+                                            <p className="font-sans text-[0.55rem] sm:text-[0.6rem] text-[rgba(247,247,251,0.30)]">{member.title}</p>
+                                        </div>
+                                    </Link>
                                 </div>
                                 <div className="hidden sm:flex items-center gap-2 shrink-0">
                                     {member.badges.slice(0, 1).map(b => <Badge key={b}>{b}</Badge>)}
