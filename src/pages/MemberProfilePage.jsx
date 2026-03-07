@@ -9,6 +9,8 @@ import Avatar from '../components/ui/Avatar'
 import { useScrollReveal } from '../hooks/useScrollReveal'
 import { useApp } from '../context/AppContext'
 import { members } from '../data/members'
+import { db } from '../firebase'
+import { doc, getDoc, collection, getDocs } from 'firebase/firestore'
 
 const containerVariants = {
     hidden: {},
@@ -25,15 +27,89 @@ export default function MemberProfilePage() {
     const avatarRef = useRef(null)
     const sectionRef = useScrollReveal()
     const [connected, setConnected] = useState(false)
+    const [member, setMember] = useState(null)
+    const [loading, setLoading] = useState(true)
 
-    const member = members.find(m => m.id === Number(id))
+    // Load member from Firestore first, then fall back to static members
+    useEffect(() => {
+        const loadMember = async () => {
+            setLoading(true)
+            try {
+                // Try Firestore by UID first
+                const userDocRef = doc(db, 'users', id)
+                const userDoc = await getDoc(userDocRef)
+                if (userDoc.exists()) {
+                    setMember({ ...userDoc.data(), uid: id })
+                    setLoading(false)
+                    return
+                }
+
+                // Try static members by numeric id
+                const staticMember = members.find(m => m.id === Number(id))
+                if (staticMember) {
+                    // Also check if this static member has a Firestore profile (by matching email or name)
+                    const usersSnap = await getDocs(collection(db, 'users'))
+                    const firestoreMatch = usersSnap.docs.find(d => {
+                        const data = d.data()
+                        return data.name?.toLowerCase() === staticMember.name?.toLowerCase()
+                    })
+                    if (firestoreMatch) {
+                        setMember({ ...staticMember, ...firestoreMatch.data(), uid: firestoreMatch.id })
+                    } else {
+                        setMember(staticMember)
+                    }
+                } else {
+                    setMember(null)
+                }
+            } catch (err) {
+                console.error('Failed to load member:', err)
+                // Fall back to static
+                const staticMember = members.find(m => m.id === Number(id))
+                setMember(staticMember || null)
+            }
+            setLoading(false)
+        }
+        loadMember()
+    }, [id])
+
+    const name = member?.name || ''
+    const initials = member?.initials || name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    const headline = member?.headline || 'CyberBase Member'
+    const location = member?.location || ''
+    const bio = member?.bio || ''
+    const skills = member?.skills || []
+    const links = member?.links || {}
+    const events = member?.events || []
+    const badges = member?.badges || []
+    const stats = member?.stats || { points: 0, rank: 0, events: 0, challenges: 0 }
+    const experience = member?.experience || []
+    const education = member?.education || []
+    const certifications = member?.certifications || []
+    const avatar = member?.avatar
+    const coverPhoto = member?.coverPhoto
+
+    const handleConnect = () => {
+        setConnected(!connected)
+        addToast(connected ? `Removed connection with ${name}` : `Connected with ${name}!`)
+    }
 
     useEffect(() => {
-        if (avatarRef.current) {
+        if (avatarRef.current && member) {
             gsap.from(avatarRef.current, { scale: 0.85, opacity: 0, duration: 0.7, ease: 'back.out(1.4)', delay: 0.2 })
         }
         window.scrollTo(0, 0)
-    }, [id])
+    }, [member])
+
+    if (loading) {
+        return (
+            <div className="min-h-screen pt-24 pb-20 px-6 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="auth-spinner mx-auto mb-3" />
+                    <p className="font-sans text-[0.75rem] text-[rgba(247,247,251,0.30)]">Loading profile…</p>
+                </div>
+            </div>
+        )
+    }
 
     if (!member) {
         return (
@@ -48,26 +124,6 @@ export default function MemberProfilePage() {
         )
     }
 
-    const name = member.name
-    const initials = member.initials
-    const headline = member.headline
-    const location = member.location || ''
-    const bio = member.bio || ''
-    const skills = member.skills || []
-    const links = member.links || {}
-    const events = member.events || []
-    const badges = member.badges || []
-    const stats = member.stats || { points: 0, rank: 0, events: 0, challenges: 0 }
-    const experience = member.experience || []
-    const education = member.education || []
-    const certifications = member.certifications || []
-    const avatar = member.avatar
-
-    const handleConnect = () => {
-        setConnected(!connected)
-        addToast(connected ? `Removed connection with ${name}` : `Connected with ${name}!`)
-    }
-
     return (
         <div className="min-h-screen pt-24 pb-20 px-6">
             <div className="max-w-[1100px] mx-auto" ref={sectionRef}>
@@ -79,14 +135,20 @@ export default function MemberProfilePage() {
                         {/* ── Hero Card ── */}
                         <GlassCard className="!p-0 overflow-hidden mb-5" data-reveal>
                             <div className="h-48 sm:h-56 relative"
-                                style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.20) 0%, rgba(139,92,246,0.15) 40%, rgba(14,14,22,0.4) 100%)' }}>
-                                <div className="absolute inset-0 opacity-[0.04]"
-                                    style={{
-                                        backgroundImage: `linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px),
-                                                          linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px)`,
-                                        backgroundSize: '40px 40px',
-                                    }}
-                                />
+                                style={{
+                                    background: coverPhoto
+                                        ? `url(${coverPhoto}) center/cover no-repeat`
+                                        : 'linear-gradient(135deg, rgba(99,102,241,0.20) 0%, rgba(139,92,246,0.15) 40%, rgba(14,14,22,0.4) 100%)'
+                                }}>
+                                {!coverPhoto && (
+                                    <div className="absolute inset-0 opacity-[0.04]"
+                                        style={{
+                                            backgroundImage: `linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px),
+                                                              linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px)`,
+                                            backgroundSize: '40px 40px',
+                                        }}
+                                    />
+                                )}
                             </div>
                             <div className="relative px-6 pb-6">
                                 <div ref={avatarRef} className="absolute -top-16 left-6">

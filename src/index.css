@@ -313,7 +313,7 @@ body::after {
   padding: 0.75rem 1.75rem;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.4);
-  cursor: none;
+  cursor: pointer;
   text-transform: uppercase;
   position: relative;
   overflow: hidden;
@@ -355,7 +355,7 @@ body::after {
   padding: 0.75rem 1.75rem;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  cursor: none;
+  cursor: pointer;
   text-transform: uppercase;
   position: relative;
   overflow: hidden;
@@ -474,11 +474,8 @@ body::after {
   border-radius: 2px;
 }
 
-/* Hide cursor on desktop (except auth page) */
+/* Custom cursor enhancement - keep native cursor visible */
 @media (pointer: fine) {
-  *:not(.auth-page):not(.auth-page *) {
-    cursor: none !important;
-  }
 
   .auth-page,
   .auth-page * {

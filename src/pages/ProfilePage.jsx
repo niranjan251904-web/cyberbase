@@ -56,6 +56,9 @@ export default function ProfilePage() {
     const avatarRef = useRef(null)
     const timelineRef = useRef(null)
     const sectionRef = useScrollReveal()
+    const avatarInputRef = useRef(null)
+    const coverInputRef = useRef(null)
+    const [uploading, setUploading] = useState(false)
 
     /* ── Modal states ── */
     const [editOpen, setEditOpen] = useState(false)
@@ -79,6 +82,62 @@ export default function ProfilePage() {
     const [certForm, setCertForm] = useState({ name: '', issuer: '', year: '' })
 
     const [addSectionOpen, setAddSectionOpen] = useState(false)
+
+    /* ── Base64 image helper ── */
+    const fileToBase64 = (file, maxWidth = 400) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader()
+            reader.onload = (e) => {
+                const img = new Image()
+                img.onload = () => {
+                    const canvas = document.createElement('canvas')
+                    const scale = Math.min(1, maxWidth / img.width)
+                    canvas.width = img.width * scale
+                    canvas.height = img.height * scale
+                    const ctx = canvas.getContext('2d')
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+                    resolve(canvas.toDataURL('image/jpeg', 0.7))
+                }
+                img.onerror = reject
+                img.src = e.target.result
+            }
+            reader.onerror = reject
+            reader.readAsDataURL(file)
+        })
+    }
+
+    /* ── Photo upload handlers ── */
+    const handleAvatarUpload = async (e) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        setUploading(true)
+        try {
+            const base64 = await fileToBase64(file, 300)
+            await updateProfile({ avatar: base64 })
+            addToast('Profile photo updated!')
+        } catch (err) {
+            console.error('Avatar upload error:', err)
+            addToast('Failed to upload photo')
+        }
+        setUploading(false)
+        e.target.value = ''
+    }
+
+    const handleCoverUpload = async (e) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        setUploading(true)
+        try {
+            const base64 = await fileToBase64(file, 1200)
+            await updateProfile({ coverPhoto: base64 })
+            addToast('Cover photo updated!')
+        } catch (err) {
+            console.error('Cover upload error:', err)
+            addToast('Failed to upload cover photo')
+        }
+        setUploading(false)
+        e.target.value = ''
+    }
 
     /* ── Animations ── */
     useEffect(() => {
@@ -264,17 +323,25 @@ export default function ProfilePage() {
                         {/* ── Hero Card (Cover + Avatar + Info) ── */}
                         <GlassCard className="!p-0 overflow-hidden mb-5" data-reveal>
                             <div className="h-48 sm:h-56 relative"
-                                style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.20) 0%, rgba(139,92,246,0.15) 40%, rgba(14,14,22,0.4) 100%)' }}>
-                                <div className="absolute inset-0 opacity-[0.04]"
-                                    style={{
-                                        backgroundImage: `linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px),
-                                                          linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px)`,
-                                        backgroundSize: '40px 40px',
-                                    }}
-                                />
+                                style={{
+                                    background: user?.coverPhoto
+                                        ? `url(${user.coverPhoto}) center/cover no-repeat`
+                                        : 'linear-gradient(135deg, rgba(99,102,241,0.20) 0%, rgba(139,92,246,0.15) 40%, rgba(14,14,22,0.4) 100%)'
+                                }}>
+                                {!user?.coverPhoto && (
+                                    <div className="absolute inset-0 opacity-[0.04]"
+                                        style={{
+                                            backgroundImage: `linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px),
+                                                              linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px)`,
+                                            backgroundSize: '40px 40px',
+                                        }}
+                                    />
+                                )}
+                                <input type="file" ref={coverInputRef} accept="image/*" className="hidden" onChange={handleCoverUpload} />
                                 <button className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110"
                                     style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.1)' }}
-                                    onClick={() => addToast('Cover photo upload coming soon!')}>
+                                    onClick={() => coverInputRef.current?.click()}
+                                    disabled={uploading}>
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                         <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" />
                                     </svg>
@@ -282,7 +349,8 @@ export default function ProfilePage() {
                             </div>
                             <div className="relative px-6 pb-6">
                                 <div ref={avatarRef} className="absolute -top-16 left-6">
-                                    <div className="relative">
+                                    <div className="relative cursor-pointer group" onClick={() => avatarInputRef.current?.click()}>
+                                        <input type="file" ref={avatarInputRef} accept="image/*" className="hidden" onChange={handleAvatarUpload} />
                                         {user?.avatar ? (
                                             <div className="w-[120px] h-[120px] rounded-full overflow-hidden border-4 border-[#0e0e16] bg-white">
                                                 <img src={user.avatar} alt={name} className="w-full h-full object-cover brightness-[1.3]" style={{ opacity: 1 }} />
@@ -290,6 +358,12 @@ export default function ProfilePage() {
                                         ) : (
                                             <Avatar initials={initials} size={120} className="border-4 border-[#0e0e16]" />
                                         )}
+                                        {/* Upload overlay on hover */}
+                                        <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center border-4 border-transparent">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" />
+                                            </svg>
+                                        </div>
                                         {openToWork && (
                                             <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-[0.45rem] font-bold uppercase tracking-wider text-white whitespace-nowrap"
                                                 style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)', border: '2px solid #0e0e16' }}>

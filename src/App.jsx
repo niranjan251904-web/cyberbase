@@ -43,7 +43,6 @@ function AppRoutes() {
       <Route path="/member/:id" element={<MemberProfilePage />} />
       <Route path="/firebase-test" element={<FirebaseTest />} />
       <Route path="/seed" element={<SeedFirestore />} />
-
     </Routes>
   )
 }

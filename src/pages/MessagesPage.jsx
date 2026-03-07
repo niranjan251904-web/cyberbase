@@ -48,24 +48,36 @@ export default function MessagesPage() {
                 const [fs1, fs2] = await Promise.all([getDocs(fq1), getDocs(fq2)])
 
                 const friends = []
-                fs1.docs.forEach(d => {
+                for (const d of fs1.docs) {
                     const data = d.data()
+                    let friendAvatar = null
+                    try {
+                        const uDoc = await getDoc(doc(db, 'users', data.toUid))
+                        if (uDoc.exists()) friendAvatar = uDoc.data().avatar || null
+                    } catch (e) { /* ignore */ }
                     friends.push({
                         uid: data.toUid,
                         name: data.toName || 'User',
                         initials: data.toName?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??',
                         headline: 'Connection',
+                        avatar: friendAvatar,
                     })
-                })
-                fs2.docs.forEach(d => {
+                }
+                for (const d of fs2.docs) {
                     const data = d.data()
+                    let friendAvatar = null
+                    try {
+                        const uDoc = await getDoc(doc(db, 'users', data.fromUid))
+                        if (uDoc.exists()) friendAvatar = uDoc.data().avatar || null
+                    } catch (e) { /* ignore */ }
                     friends.push({
                         uid: data.fromUid,
                         name: data.fromName || 'User',
                         initials: data.fromInitials || data.fromName?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??',
                         headline: data.fromHeadline || 'Connection',
+                        avatar: friendAvatar,
                     })
-                })
+                }
                 setAllFriends(friends)
 
                 // 2. Load conversations from messages
@@ -77,7 +89,7 @@ export default function MessagesPage() {
                     .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))
 
                 const chatMap = {}
-                allMsgs.forEach(msg => {
+                for (const msg of allMsgs) {
                     const partnerUid = msg.fromUid === user.uid ? msg.toUid : msg.fromUid
                     const partnerName = msg.fromUid === user.uid ? msg.toName : msg.fromName
                     const partnerInitials = msg.fromUid === user.uid
@@ -85,19 +97,26 @@ export default function MessagesPage() {
                         : (msg.fromName?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??')
 
                     if (!chatMap[partnerUid]) {
+                        // Fetch avatar from Firestore
+                        let partnerAvatar = null
+                        try {
+                            const uDoc = await getDoc(doc(db, 'users', partnerUid))
+                            if (uDoc.exists()) partnerAvatar = uDoc.data().avatar || null
+                        } catch (e) { /* ignore */ }
                         chatMap[partnerUid] = {
                             uid: partnerUid,
                             name: partnerName || 'Unknown',
                             initials: partnerInitials,
                             lastMessage: msg.text,
                             lastTime: msg.createdAt,
+                            avatar: partnerAvatar,
                         }
                     }
                     if (msg.createdAt > chatMap[partnerUid].lastTime) {
                         chatMap[partnerUid].lastMessage = msg.text
                         chatMap[partnerUid].lastTime = msg.createdAt
                     }
-                })
+                }
 
                 setConversations(Object.values(chatMap).sort((a, b) => (b.lastTime || '').localeCompare(a.lastTime || '')))
             } catch (err) {
@@ -121,6 +140,7 @@ export default function MessagesPage() {
                         name: data.name || 'User',
                         initials: data.initials || data.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??',
                         headline: data.headline || 'Member',
+                        avatar: data.avatar || null,
                     })
                 }
             } catch (err) {
@@ -224,6 +244,7 @@ export default function MessagesPage() {
             name: person.name,
             initials: person.initials || person.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??',
             headline: person.headline || 'Member',
+            avatar: person.avatar || null,
         })
         setSearchQuery('')
         setShowSearchResults(false)
@@ -313,7 +334,11 @@ export default function MessagesPage() {
                                                     onClick={() => openChat(person)}
                                                     className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[rgba(255,255,255,0.04)] transition-colors text-left"
                                                 >
-                                                    <Avatar initials={person.initials || '??'} size={32} />
+                                                    {person.avatar ? (
+                                                        <img src={person.avatar} alt={person.name} className="w-8 h-8 rounded-full object-cover shrink-0" />
+                                                    ) : (
+                                                        <Avatar initials={person.initials || '??'} size={32} />
+                                                    )}
                                                     <div className="flex-1 min-w-0">
                                                         <p className="text-[0.72rem] text-white font-medium truncate">{person.name}</p>
                                                         <p className="text-[0.58rem] text-[rgba(255,255,255,0.25)] truncate">{person.headline || 'Connection'}</p>
@@ -357,7 +382,11 @@ export default function MessagesPage() {
                                         }}
                                     >
                                         <div className="relative shrink-0">
-                                            <Avatar initials={convo.initials || '??'} size={40} />
+                                            {convo.avatar ? (
+                                                <img src={convo.avatar} alt={convo.name} className="w-10 h-10 rounded-full object-cover" />
+                                            ) : (
+                                                <Avatar initials={convo.initials || '??'} size={40} />
+                                            )}
                                             <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2"
                                                 style={{ background: statusColors.online, borderColor: 'rgba(8,8,16,1)' }} />
                                         </div>
@@ -392,7 +421,11 @@ export default function MessagesPage() {
                                         </svg>
                                     </button>
                                     <div className="relative">
-                                        <Avatar initials={activeChat.initials || '??'} size={36} />
+                                        {activeChat.avatar ? (
+                                            <img src={activeChat.avatar} alt={activeChat.name} className="w-9 h-9 rounded-full object-cover" />
+                                        ) : (
+                                            <Avatar initials={activeChat.initials || '??'} size={36} />
+                                        )}
                                         <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[rgba(8,8,16,1)]"
                                             style={{ background: statusColors.online }} />
                                     </div>

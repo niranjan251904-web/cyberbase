@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { db } from '../firebase'
-import { collection, getDocs, doc, updateDoc, addDoc, query, where, deleteDoc } from 'firebase/firestore'
+import { collection, getDocs, doc, getDoc, updateDoc, addDoc, query, where, deleteDoc } from 'firebase/firestore'
 import { useAuth } from '../context/AuthContext'
 import GlassCard from '../components/ui/GlassCard'
 import Badge from '../components/ui/Badge'
@@ -47,6 +47,18 @@ export default function NetworkPage() {
                 )
                 const reqSnap = await getDocs(reqQuery)
                 const incomingRequests = reqSnap.docs.map(d => ({ _id: d.id, ...d.data() }))
+
+                // Enrich requests with avatar from Firestore users
+                for (const req of incomingRequests) {
+                    if (req.fromUid) {
+                        try {
+                            const fromDoc = await getDoc(doc(db, 'users', req.fromUid))
+                            if (fromDoc.exists()) {
+                                req.fromAvatar = fromDoc.data().avatar || null
+                            }
+                        } catch (e) { /* ignore */ }
+                    }
+                }
                 setRequests(incomingRequests)
 
                 // 2. My connections (accepted requests — both directions)
@@ -63,8 +75,13 @@ export default function NetworkPage() {
                 const [connSnap1, connSnap2] = await Promise.all([getDocs(connQuery1), getDocs(connQuery2)])
 
                 const myConnections = []
-                connSnap1.docs.forEach(d => {
+                for (const d of connSnap1.docs) {
                     const data = d.data()
+                    let connAvatar = null
+                    try {
+                        const uDoc = await getDoc(doc(db, 'users', data.toUid))
+                        if (uDoc.exists()) connAvatar = uDoc.data().avatar || null
+                    } catch (e) { /* ignore */ }
                     myConnections.push({
                         _id: d.id,
                         uid: data.toUid,
@@ -73,10 +90,16 @@ export default function NetworkPage() {
                         initials: data.toName?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??',
                         headline: 'Connected',
                         connectedSince: data.acceptedAt || data.createdAt,
+                        avatar: connAvatar,
                     })
-                })
-                connSnap2.docs.forEach(d => {
+                }
+                for (const d of connSnap2.docs) {
                     const data = d.data()
+                    let connAvatar = null
+                    try {
+                        const uDoc = await getDoc(doc(db, 'users', data.fromUid))
+                        if (uDoc.exists()) connAvatar = uDoc.data().avatar || null
+                    } catch (e) { /* ignore */ }
                     myConnections.push({
                         _id: d.id,
                         uid: data.fromUid,
@@ -85,8 +108,9 @@ export default function NetworkPage() {
                         initials: data.fromInitials || data.fromName?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??',
                         headline: data.fromHeadline || 'Connected',
                         connectedSince: data.acceptedAt || data.createdAt,
+                        avatar: connAvatar,
                     })
-                })
+                }
                 setConnections(myConnections)
 
                 // 3. All users (for suggestions) — exclude self and already connected
@@ -249,7 +273,11 @@ export default function NetworkPage() {
                                         >
                                             <GlassCard>
                                                 <div className="flex items-center gap-3 mb-3">
-                                                    <Avatar initials={req.fromInitials || req.fromName?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??'} size={48} />
+                                                    {req.fromAvatar ? (
+                                                        <img src={req.fromAvatar} alt={req.fromName} className="w-12 h-12 rounded-full object-cover shrink-0" />
+                                                    ) : (
+                                                        <Avatar initials={req.fromInitials || req.fromName?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??'} size={48} />
+                                                    )}
                                                     <div className="flex-1 min-w-0">
                                                         <h3 className="font-display text-[1rem] text-white truncate">{req.fromName}</h3>
                                                         <p className="font-sans text-[0.65rem] text-[rgba(247,247,251,0.40)] truncate">{req.fromHeadline || 'Member'}</p>
@@ -309,7 +337,11 @@ export default function NetworkPage() {
                                                 </button>
 
                                                 <div className="flex flex-col items-center">
-                                                    <Avatar initials={person.initials || person.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??'} size={56} className="mb-3" />
+                                                    {person.avatar ? (
+                                                        <img src={person.avatar} alt={person.name} className="w-14 h-14 rounded-full object-cover mb-3" />
+                                                    ) : (
+                                                        <Avatar initials={person.initials || person.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??'} size={56} className="mb-3" />
+                                                    )}
                                                     <h3 className="font-display text-[0.95rem] text-white mb-0.5">{person.name}</h3>
                                                     <p className="font-sans text-[0.62rem] text-[rgba(247,247,251,0.40)] mb-2 line-clamp-2">{person.headline || person.email}</p>
                                                 </div>
@@ -357,7 +389,11 @@ export default function NetworkPage() {
                                 whileHover={{ backgroundColor: 'rgba(247,247,251,0.04)' }}
                             >
                                 <div className="relative shrink-0">
-                                    <Avatar initials={conn.initials || '??'} size={40} />
+                                    {conn.avatar ? (
+                                        <img src={conn.avatar} alt={conn.name} className="w-10 h-10 rounded-full object-cover" />
+                                    ) : (
+                                        <Avatar initials={conn.initials || '??'} size={40} />
+                                    )}
                                     <span
                                         className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#080810]"
                                         style={{ background: statusColors.online }}
