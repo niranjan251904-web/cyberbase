@@ -9,6 +9,7 @@ import Toast from './components/ui/Toast'
 import CustomCursor from './components/ui/CustomCursor'
 import AuthModal from './components/ui/AuthModal'
 import CyberBot from './components/chatbot/CyberBot'
+import MobileBottomNav from './components/layout/MobileBottomNav'
 import AuthPage from './pages/AuthPage'
 import HomePage from './pages/HomePage'
 import EventsPage from './pages/EventsPage'
@@ -75,6 +76,7 @@ function AppInner() {
         <AppRoutes />
       </main>
       <Footer />
+      <MobileBottomNav />
       <CyberBot />
       <Toast />
       <AuthModal />

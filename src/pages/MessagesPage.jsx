@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, Link } from 'react-router-dom'
 import { db } from '../firebase'
 import { collection, getDocs, addDoc, query, where, onSnapshot, doc, getDoc } from 'firebase/firestore'
 import { useAuth } from '../context/AuthContext'
@@ -429,12 +429,12 @@ export default function MessagesPage() {
                                         <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[rgba(8,8,16,1)]"
                                             style={{ background: statusColors.online }} />
                                     </div>
-                                    <div>
-                                        <p className="text-[0.8rem] text-white font-medium">{activeChat.name}</p>
-                                        <p className="text-[0.6rem] text-[rgba(255,255,255,0.3)]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
-                                            {activeChat.headline || 'Member'}
-                                        </p>
-                                    </div>
+                                    <Link to={`/member/${activeChat.uid}`}>
+                                        <p className="text-[0.8rem] text-white font-medium hover:text-[#a78bfa] transition-colors cursor-pointer">{activeChat.name}</p>
+                                    </Link>
+                                    <p className="text-[0.6rem] text-[rgba(255,255,255,0.3)]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
+                                        {activeChat.headline || 'Member'}
+                                    </p>
                                 </div>
 
                                 {/* Messages */}

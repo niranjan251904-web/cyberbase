@@ -812,3 +812,10 @@ body::after {
     width: 100%;
   }
 }
+
+/* Mobile bottom nav spacing */
+@media (max-width: 767px) {
+  main {
+    padding-bottom: 72px;
+  }
+}

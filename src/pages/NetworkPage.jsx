@@ -336,15 +336,15 @@ export default function NetworkPage() {
                                                     </svg>
                                                 </button>
 
-                                                <div className="flex flex-col items-center">
+                                                <Link to={`/member/${personUid}`} className="flex flex-col items-center cursor-pointer">
                                                     {person.avatar ? (
                                                         <img src={person.avatar} alt={person.name} className="w-14 h-14 rounded-full object-cover mb-3" />
                                                     ) : (
                                                         <Avatar initials={person.initials || person.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??'} size={56} className="mb-3" />
                                                     )}
-                                                    <h3 className="font-display text-[0.95rem] text-white mb-0.5">{person.name}</h3>
+                                                    <h3 className="font-display text-[0.95rem] text-white mb-0.5 hover:text-[#a78bfa] transition-colors">{person.name}</h3>
                                                     <p className="font-sans text-[0.62rem] text-[rgba(247,247,251,0.40)] mb-2 line-clamp-2">{person.headline || person.email}</p>
-                                                </div>
+                                                </Link>
                                                 {person.skills && person.skills.length > 0 && (
                                                     <div className="flex flex-wrap gap-1 justify-center mb-4">
                                                         {person.skills.slice(0, 3).map((s) => (
@@ -399,10 +399,10 @@ export default function NetworkPage() {
                                         style={{ background: statusColors.online }}
                                     />
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="font-sans text-[0.75rem] text-white truncate">{conn.name}</p>
+                                <Link to={`/member/${conn.uid}`} className="flex-1 min-w-0 cursor-pointer">
+                                    <p className="font-sans text-[0.75rem] text-white truncate hover:text-[#a78bfa] transition-colors">{conn.name}</p>
                                     <p className="font-sans text-[0.6rem] text-[rgba(247,247,251,0.30)] truncate">{conn.headline}</p>
-                                </div>
+                                </Link>
                                 {conn.connectedSince && (
                                     <span className="hidden sm:block font-sans text-[0.55rem] text-[rgba(247,247,251,0.20)] shrink-0">
                                         Connected {new Date(conn.connectedSince).toLocaleDateString()}
