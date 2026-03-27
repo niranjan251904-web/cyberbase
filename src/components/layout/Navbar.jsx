@@ -261,7 +261,7 @@ export default function Navbar() {
                         className="text-lg text-white italic tracking-tight mr-3"
                         style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
                     >
-                        CyberBase
+                        AI × Cyber
                     </NavLink>
 
                     {/* ─── Inline Search Bar ─── */}
@@ -417,7 +417,7 @@ export default function Navbar() {
             >
                 <div className="flex items-center justify-between h-12">
                     <NavLink to="/" className="text-lg text-white italic tracking-tight" style={{ fontFamily: "'Instrument Serif', Georgia, serif" }} onClick={closeMobile}>
-                        CyberBase
+                        AI × Cyber
                     </NavLink>
 
                     <div className="flex items-center gap-1.5">

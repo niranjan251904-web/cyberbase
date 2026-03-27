@@ -74,7 +74,7 @@ export default function MemberProfilePage() {
 
     const name = member?.name || ''
     const initials = member?.initials || name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-    const headline = member?.headline || 'CyberBase Member'
+    const headline = member?.headline || 'AI × Cybersecurity Member'
     const location = member?.location || ''
     const bio = member?.bio || ''
     const skills = member?.skills || []

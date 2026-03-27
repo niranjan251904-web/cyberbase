@@ -185,7 +185,7 @@ export default function ProfilePage() {
     /* ─── User data with safe fallbacks ─── */
     const name = user.name || 'User'
     const initials = user.initials || name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-    const headline = user.headline || 'CyberBase Member'
+    const headline = user.headline || 'AI × Cybersecurity Member'
     const location = user.location || ''
     const bio = user.bio || ''
     const skills = user.skills || []
@@ -418,7 +418,7 @@ export default function ProfilePage() {
                                         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-4 overflow-hidden">
                                             <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.12)' }}>
                                                 <div className="flex-1">
-                                                    <p className="font-sans text-[0.72rem] text-[rgba(255,255,255,0.7)] font-medium">Open to work · Visible to everyone on CyberBase</p>
+                                                    <p className="font-sans text-[0.72rem] text-[rgba(255,255,255,0.7)] font-medium">Open to work · Visible to everyone on AI × Cybersecurity</p>
                                                     <p className="font-sans text-[0.65rem] text-[rgba(255,255,255,0.35)] mt-0.5">{skills.slice(0, 3).join(', ') || 'Any'} roles</p>
                                                 </div>
                                                 <PencilBtn onClick={openEdit} className="!w-7 !h-7" />
@@ -657,7 +657,7 @@ export default function ProfilePage() {
                                 </svg>
                             </div>
                             <p className="font-sans text-[0.58rem] text-[rgba(255,255,255,0.25)]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
-                                cyberbase.io/in/{name.toLowerCase().replace(/\s+/g, '-')}
+                                aixcybersecurity.com/in/{name.toLowerCase().replace(/\s+/g, '-')}
                             </p>
                         </GlassCard>
                         <GlassCard className="!p-4" data-reveal>

@@ -5,14 +5,14 @@ import { AnimatePresence, motion } from 'framer-motion'
 
 gsap.registerPlugin(ScrollTrigger)
 
-const FRAME_COUNT = 98
+const FRAME_COUNT = 270
 const FRAME_PATH = '/hero-frames/ezgif-frame-'
 
 // position: where text appears, align: text alignment, enter/exit: animation direction
 const SECTIONS = [
     {
-        title: 'CYBER',
-        subtitle: 'BASE',
+        title: 'AI × CYBER',
+        subtitle: 'SECURITY',
         description: 'The digital headquarters for AI × Cybersecurity professionals.',
         position: 'right',   // bottom-right
         enter: { x: 80, y: 0 },
@@ -65,7 +65,7 @@ function getFrameSrc(index) {
 }
 
 function getSectionIndex(frame) {
-    return Math.min(Math.floor(frame / 22), SECTIONS.length - 1)
+    return Math.min(Math.floor(frame / 54), SECTIONS.length - 1)
 }
 
 // Self-contained overlay — bakes in its own position & animation so exit works correctly
@@ -131,20 +131,49 @@ export default function HeroCanvas() {
 
     useEffect(() => {
         const images = []
-        let loadedCount = 0
-
         for (let i = 1; i <= FRAME_COUNT; i++) {
             const img = new Image()
-            img.src = getFrameSrc(i)
-            img.onload = () => {
-                loadedCount++
-                if (loadedCount === FRAME_COUNT) {
-                    setLoaded(true)
-                }
-            }
             images.push(img)
         }
         imagesRef.current = images
+
+        let isCancelled = false
+
+        // Load the first frame immediately so the UI is unblocked
+        images[0].src = getFrameSrc(1)
+        images[0].onload = () => {
+            if (isCancelled) return
+            setLoaded(true) // Unlock the loading state as soon as frame 1 is ready
+            loadNextBatch(1) // Begin loading the rest of the frames
+        }
+
+        // Progressively load frames in small batches so we don't stall the Vite server
+        function loadNextBatch(startIndex) {
+            if (isCancelled || startIndex >= FRAME_COUNT) return
+            
+            const batchSize = 10
+            const endIndex = Math.min(startIndex + batchSize, FRAME_COUNT)
+            let batchLoadedCount = 0
+            const totalInBatch = endIndex - startIndex
+
+            const checkNextBatch = () => {
+                if (isCancelled) return
+                batchLoadedCount++
+                if (batchLoadedCount === totalInBatch) {
+                    loadNextBatch(endIndex)
+                }
+            }
+
+            for (let i = startIndex; i < endIndex; i++) {
+                images[i].src = getFrameSrc(i + 1) // +1 because frames start at 1
+                images[i].onload = checkNextBatch
+                images[i].onerror = checkNextBatch // skip failed frames gracefully
+            }
+        }
+
+        return () => {
+            isCancelled = true
+        }
     }, [])
 
     useEffect(() => {
@@ -161,7 +190,8 @@ export default function HeroCanvas() {
 
         function drawFrame(index) {
             const img = imagesRef.current[index]
-            if (!img) return
+            // Ensure the image is actually fully loaded before drawing
+            if (!img || !img.complete || img.naturalWidth === 0) return
 
             const cw = canvas.width
             const ch = canvas.height
@@ -215,7 +245,7 @@ export default function HeroCanvas() {
         <div
             ref={containerRef}
             className="relative"
-            style={{ height: `${FRAME_COUNT * 6}vh` }}
+            style={{ height: `${FRAME_COUNT * 2.5}vh` }}
         >
             <div className="sticky top-0 w-full h-screen overflow-hidden">
                 <canvas

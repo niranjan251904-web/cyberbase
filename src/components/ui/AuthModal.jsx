@@ -24,7 +24,7 @@ export default function AuthModal() {
     }
 
     return (
-        <Modal isOpen={showAuth} onClose={() => setShowAuth(false)} title={authMode === 'login' ? 'Welcome back' : 'Join CyberBase'} maxWidth="420px">
+        <Modal isOpen={showAuth} onClose={() => setShowAuth(false)} title={authMode === 'login' ? 'Welcome back' : 'Join AI × Cybersecurity'} maxWidth="420px">
             <form onSubmit={handleSubmit} className="flex flex-col gap-4" autoComplete="off">
 
                 {authMode === 'signup' && (

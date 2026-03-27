@@ -45,7 +45,7 @@ export default function AuthPage() {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] }}
                 >
-                    <h1 className="auth-logo">CyberBase</h1>
+                    <h1 className="auth-logo">AI × Cyber</h1>
                     <p className="auth-tagline">
                         The digital home for the next generation of AI and cybersecurity professionals.
                     </p>
@@ -94,7 +94,7 @@ export default function AuthPage() {
                             </h2>
                             <p className="auth-form-subtitle">
                                 {mode === 'login'
-                                    ? 'Sign in to continue to CyberBase'
+                                    ? 'Sign in to continue to AI × Cybersecurity'
                                     : 'Join the cybersecurity community'}
                             </p>
 
