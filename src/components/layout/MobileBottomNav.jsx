@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, LayoutGroup } from 'framer-motion'
 
 const tabs = [
     {
@@ -53,67 +53,69 @@ export default function MobileBottomNav() {
 
     return (
         <nav
-            className="fixed bottom-0 left-0 right-0 z-[900] md:hidden"
+            className="fixed bottom-0 left-0 right-0 z-[9999] block md:hidden"
             style={{
                 background: 'rgba(10,10,18,0.92)',
                 backdropFilter: 'blur(40px) saturate(1.6)',
                 WebkitBackdropFilter: 'blur(40px) saturate(1.6)',
                 borderTop: '1px solid rgba(255,255,255,0.08)',
                 boxShadow: '0 -4px 30px rgba(0,0,0,0.4)',
-                paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+                paddingBottom: 'env(safe-area-inset-bottom, 0px)'
             }}
         >
             <div className="flex items-center justify-around h-16 max-w-md mx-auto px-2">
-                {tabs.map((tab) => {
-                    const active = isActive(tab.to)
-                    return (
-                        <NavLink
-                            key={tab.to}
-                            to={tab.to}
-                            className="relative flex flex-col items-center justify-center gap-1 flex-1 h-full transition-all"
-                            style={{ textDecoration: 'none' }}
-                        >
-                            {/* Active background glow */}
-                            {active && (
-                                <motion.div
-                                    layoutId="mobile-bottom-active"
-                                    className="absolute inset-x-2 top-1 bottom-1 rounded-xl"
-                                    style={{
-                                        background: 'rgba(139,92,246,0.08)',
-                                        border: '1px solid rgba(139,92,246,0.12)',
-                                    }}
-                                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                                />
-                            )}
-
-                            {/* Icon */}
-                            <div className="relative z-10">
-                                {tab.icon(active)}
-                            </div>
-
-                            {/* Label */}
-                            <span
-                                className="relative z-10 text-[0.55rem] font-medium tracking-wider uppercase"
-                                style={{
-                                    color: active ? '#c4b5fd' : 'rgba(255,255,255,0.35)',
-                                    fontFamily: "'Inter', sans-serif",
-                                }}
+                <LayoutGroup id="bottom-nav">
+                    {tabs.map((tab) => {
+                        const active = isActive(tab.to)
+                        return (
+                            <NavLink
+                                key={tab.to}
+                                to={tab.to}
+                                className="relative flex flex-col items-center justify-center gap-1 flex-1 h-full transition-all"
+                                style={{ textDecoration: 'none' }}
                             >
-                                {tab.label}
-                            </span>
+                                {/* Active background glow */}
+                                {active && (
+                                    <motion.div
+                                        layoutId="mobile-bottom-active"
+                                        className="absolute inset-x-2 top-1 bottom-1 rounded-xl"
+                                        style={{
+                                            background: 'rgba(139,92,246,0.08)',
+                                            border: '1px solid rgba(139,92,246,0.12)',
+                                        }}
+                                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                                    />
+                                )}
 
-                            {/* Active dot indicator */}
-                            {active && (
-                                <motion.div
-                                    layoutId="mobile-bottom-dot"
-                                    className="absolute -top-0.5 w-1 h-1 rounded-full"
-                                    style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)' }}
-                                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                                />
-                            )}
-                        </NavLink>
-                    )
-                })}
+                                {/* Icon */}
+                                <div className="relative z-10">
+                                    {tab.icon(active)}
+                                </div>
+
+                                {/* Label */}
+                                <span
+                                    className="relative z-10 text-[0.55rem] font-medium tracking-wider uppercase"
+                                    style={{
+                                        color: active ? '#c4b5fd' : 'rgba(255,255,255,0.35)',
+                                        fontFamily: "'Inter', sans-serif",
+                                    }}
+                                >
+                                    {tab.label}
+                                </span>
+
+                                {/* Active dot indicator */}
+                                {active && (
+                                    <motion.div
+                                        layoutId="mobile-bottom-dot"
+                                        className="absolute -top-0.5 w-1 h-1 rounded-full"
+                                        style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)' }}
+                                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                                    />
+                                )}
+                            </NavLink>
+                        )
+                    })}
+                </LayoutGroup>
             </div>
         </nav>
     )

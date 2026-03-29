@@ -4,17 +4,17 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { AnimatePresence, motion } from 'framer-motion'
 
 gsap.registerPlugin(ScrollTrigger)
+ScrollTrigger.config({ ignoreMobileResize: true })
 
 const FRAME_COUNT = 270
 const FRAME_PATH = '/hero-frames/ezgif-frame-'
 
-// position: where text appears, align: text alignment, enter/exit: animation direction
 const SECTIONS = [
     {
         title: 'AI × CYBER',
         subtitle: 'SECURITY',
         description: 'The digital headquarters for AI × Cybersecurity professionals.',
-        position: 'right',   // bottom-right
+        position: 'right',
         enter: { x: 80, y: 0 },
         exit: { x: 40, y: -20 },
     },
@@ -22,7 +22,7 @@ const SECTIONS = [
         title: 'BUILD',
         subtitle: 'TOGETHER',
         description: 'Form elite teams. Tackle real-world challenges. Ship solutions.',
-        position: 'left',    // bottom-left
+        position: 'left',
         enter: { x: -80, y: 0 },
         exit: { x: -40, y: -20 },
     },
@@ -30,7 +30,7 @@ const SECTIONS = [
         title: 'COMPETE',
         subtitle: '& LEARN',
         description: 'CTFs, hackathons, workshops — sharpen your edge every week.',
-        position: 'center',  // center
+        position: 'center',
         enter: { x: 0, y: 60 },
         exit: { x: 0, y: -30 },
     },
@@ -38,7 +38,7 @@ const SECTIONS = [
         title: 'CLIMB',
         subtitle: 'THE RANKS',
         description: 'Dynamic leaderboard. Earn points. Prove your expertise.',
-        position: 'right',   // top-right area
+        position: 'right',
         enter: { x: 60, y: -40 },
         exit: { x: 30, y: 20 },
     },
@@ -46,13 +46,12 @@ const SECTIONS = [
         title: 'JOIN',
         subtitle: 'THE MISSION',
         description: 'Connect with 500+ members building the future of security.',
-        position: 'left',    // bottom-left
+        position: 'left',
         enter: { x: -60, y: 40 },
         exit: { x: -30, y: -20 },
     },
 ]
 
-// Position styles for each layout
 const positionStyles = {
     right: 'items-end sm:items-end justify-end text-right pb-24 sm:pb-32 pr-6 md:pr-16',
     left: 'items-start justify-end text-left pb-24 sm:pb-32 pl-6 md:pl-16',
@@ -68,7 +67,6 @@ function getSectionIndex(frame) {
     return Math.min(Math.floor(frame / 54), SECTIONS.length - 1)
 }
 
-// Self-contained overlay — bakes in its own position & animation so exit works correctly
 function SectionOverlay({ section, index, activeIndex }) {
     const posClass = positionStyles[section.position]
     const dotAlign = section.position === 'right' ? 'justify-end' : section.position === 'center' ? 'justify-center' : 'justify-start'
@@ -84,20 +82,20 @@ function SectionOverlay({ section, index, activeIndex }) {
             <div className="max-w-[520px]">
                 <h1 className="mb-2">
                     <span
-                        className="block text-[clamp(3rem,8vw,7rem)] text-white leading-[0.9] font-light"
+                        className="block text-[clamp(2.5rem,8vw,7rem)] text-white leading-[0.9] font-light"
                         style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
                     >
                         {section.title}
                     </span>
                     <span
-                        className="block text-[clamp(3rem,8vw,7rem)] text-white leading-[0.9] italic font-light"
+                        className="block text-[clamp(2.5rem,8vw,7rem)] text-white leading-[0.9] italic font-light"
                         style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
                     >
                         {section.subtitle}
                     </span>
                 </h1>
                 <p
-                    className="text-[0.8rem] sm:text-[0.9rem] text-[rgba(247,247,251,0.55)] max-w-[420px] mt-4 leading-relaxed"
+                    className="text-[0.75rem] sm:text-[0.9rem] text-[rgba(247,247,251,0.55)] max-w-[420px] mt-4 leading-relaxed"
                     style={{ fontFamily: "'IBM Plex Mono', monospace" }}
                 >
                     {section.description}
@@ -128,52 +126,49 @@ export default function HeroCanvas() {
     const currentFrameRef = useRef(0)
     const [loaded, setLoaded] = useState(false)
     const [activeSection, setActiveSection] = useState(0)
+    const [scrollMult, setScrollMult] = useState(2.5)
 
     useEffect(() => {
+        setScrollMult(window.innerWidth < 768 ? 1.2 : 2.5)
+        
         const images = []
         for (let i = 1; i <= FRAME_COUNT; i++) {
-            const img = new Image()
-            images.push(img)
+            images.push(new Image())
         }
         imagesRef.current = images
 
         let isCancelled = false
 
-        // Load the first frame immediately so the UI is unblocked
         images[0].src = getFrameSrc(1)
         images[0].onload = () => {
             if (isCancelled) return
-            setLoaded(true) // Unlock the loading state as soon as frame 1 is ready
-            loadNextBatch(1) // Begin loading the rest of the frames
+            setLoaded(true)
+            loadNextBatch(1)
         }
 
-        // Progressively load frames in small batches so we don't stall the Vite server
         function loadNextBatch(startIndex) {
             if (isCancelled || startIndex >= FRAME_COUNT) return
             
             const batchSize = 10
             const endIndex = Math.min(startIndex + batchSize, FRAME_COUNT)
             let batchLoadedCount = 0
-            const totalInBatch = endIndex - startIndex
 
             const checkNextBatch = () => {
                 if (isCancelled) return
                 batchLoadedCount++
-                if (batchLoadedCount === totalInBatch) {
+                if (batchLoadedCount === (endIndex - startIndex)) {
                     loadNextBatch(endIndex)
                 }
             }
 
             for (let i = startIndex; i < endIndex; i++) {
-                images[i].src = getFrameSrc(i + 1) // +1 because frames start at 1
                 images[i].onload = checkNextBatch
-                images[i].onerror = checkNextBatch // skip failed frames gracefully
+                images[i].onerror = checkNextBatch
+                images[i].src = getFrameSrc(i + 1)
             }
         }
 
-        return () => {
-            isCancelled = true
-        }
+        return () => { isCancelled = true }
     }, [])
 
     useEffect(() => {
@@ -188,11 +183,7 @@ export default function HeroCanvas() {
             drawFrame(currentFrameRef.current)
         }
 
-        function drawFrame(index) {
-            const img = imagesRef.current[index]
-            // Ensure the image is actually fully loaded before drawing
-            if (!img || !img.complete || img.naturalWidth === 0) return
-
+        function doDraw(img) {
             const cw = canvas.width
             const ch = canvas.height
             const iw = img.naturalWidth
@@ -206,6 +197,28 @@ export default function HeroCanvas() {
 
             ctx.clearRect(0, 0, cw, ch)
             ctx.drawImage(img, dx, dy, dw, dh)
+        }
+
+        function drawFrame(index) {
+            const img = imagesRef.current[index]
+            if (!img) return
+
+            if (!img.complete || img.naturalWidth === 0) {
+                // Not loaded yet? Set a quick listener/poll to redraw when ready
+                const checkReady = () => {
+                    if (currentFrameRef.current === index) {
+                        if (img.complete && img.naturalWidth > 0) {
+                            doDraw(img)
+                        } else {
+                            setTimeout(checkReady, 50)
+                        }
+                    }
+                }
+                setTimeout(checkReady, 50)
+                return
+            }
+
+            doDraw(img)
         }
 
         resizeCanvas()
@@ -245,21 +258,19 @@ export default function HeroCanvas() {
         <div
             ref={containerRef}
             className="relative"
-            style={{ height: `${FRAME_COUNT * 2.5}vh` }}
+            style={{ height: `${FRAME_COUNT * scrollMult}vh` }}
         >
-            <div className="sticky top-0 w-full h-screen overflow-hidden">
+            <div className="sticky top-0 w-full h-[100dvh] overflow-hidden">
                 <canvas
                     ref={canvasRef}
-                    className="w-full h-full"
+                    className="w-full h-full object-cover"
                     style={{ display: loaded ? 'block' : 'none' }}
                 />
 
-                {/* Dark overlay */}
                 {loaded && (
                     <div className="absolute inset-0 bg-gradient-to-t from-[rgba(8,8,16,0.65)] via-[rgba(8,8,16,0.1)] to-[rgba(8,8,16,0.25)]" />
                 )}
 
-                {/* Text overlays — each section is self-contained */}
                 {loaded && (
                     <AnimatePresence mode="wait">
                         <SectionOverlay
@@ -282,3 +293,4 @@ export default function HeroCanvas() {
         </div>
     )
 }
+

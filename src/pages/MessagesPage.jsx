@@ -33,7 +33,12 @@ export default function MessagesPage() {
 
     // Scroll to bottom
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        if (messagesEndRef.current && messagesEndRef.current.parentElement) {
+            setTimeout(() => {
+                const container = messagesEndRef.current.parentElement
+                container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' })
+            }, 50)
+        }
     }, [messages])
 
     // Load conversations + friends list
@@ -248,6 +253,7 @@ export default function MessagesPage() {
         })
         setSearchQuery('')
         setShowSearchResults(false)
+        window.scrollTo({ top: 0, behavior: 'smooth' })
     }
 
     const formatTime = (ts) => {

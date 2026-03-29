@@ -54,7 +54,7 @@ export default function CyberBot() {
         <>
             {/* Floating button */}
             <motion.button
-                className="fixed bottom-6 left-6 z-[1500] w-12 h-12 rounded-full flex items-center justify-center text-lg"
+                className="fixed bottom-24 md:bottom-6 left-6 z-[1500] w-12 h-12 rounded-full flex items-center justify-center text-lg"
                 style={{ background: '#080810', border: '1px solid rgba(247,247,251,0.15)', color: '#F7F7FB' }}
                 whileHover={{ scale: 1.08 }}
                 whileTap={{ scale: 0.95 }}
@@ -67,7 +67,7 @@ export default function CyberBot() {
             <AnimatePresence>
                 {chatOpen && (
                     <motion.div
-                        className="fixed bottom-20 left-3 right-3 sm:left-6 sm:right-auto z-[1500] glass flex flex-col"
+                        className="fixed bottom-40 md:bottom-20 left-3 right-3 sm:left-6 sm:right-auto z-[1500] glass flex flex-col"
                         style={{ width: 'auto', maxWidth: 360, height: 'min(440px, 70vh)' }}
                         variants={chatVariants}
                         initial="hidden"
