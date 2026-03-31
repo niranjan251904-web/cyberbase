@@ -258,7 +258,7 @@ export default function Navbar() {
                 <div className="flex items-center gap-1 h-12 px-4">
                     <NavLink
                         to="/"
-                        className="text-lg text-white italic tracking-tight mr-3"
+                        className="text-lg text-white italic tracking-tight mr-3 whitespace-nowrap shrink-0"
                         style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
                     >
                         AI × Cyber
@@ -416,7 +416,7 @@ export default function Navbar() {
                 }}
             >
                 <div className="flex items-center justify-between h-12">
-                    <NavLink to="/" className="text-lg text-white italic tracking-tight" style={{ fontFamily: "'Instrument Serif', Georgia, serif" }} onClick={closeMobile}>
+                    <NavLink to="/" className="text-lg text-white italic tracking-tight whitespace-nowrap shrink-0" style={{ fontFamily: "'Instrument Serif', Georgia, serif" }} onClick={closeMobile}>
                         AI × Cyber
                     </NavLink>
 
