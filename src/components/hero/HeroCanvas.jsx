@@ -139,34 +139,32 @@ export default function HeroCanvas() {
 
         let isCancelled = false
 
-        images[0].src = getFrameSrc(1)
         images[0].onload = () => {
             if (isCancelled) return
             setLoaded(true)
-            loadNextBatch(1)
-        }
-
-        function loadNextBatch(startIndex) {
-            if (isCancelled || startIndex >= FRAME_COUNT) return
             
-            const batchSize = 10
-            const endIndex = Math.min(startIndex + batchSize, FRAME_COUNT)
-            let batchLoadedCount = 0
-
-            const checkNextBatch = () => {
-                if (isCancelled) return
-                batchLoadedCount++
-                if (batchLoadedCount === (endIndex - startIndex)) {
-                    loadNextBatch(endIndex)
+            // Start loading all other frames without sequential batching
+            // Using a slight delay to allow React to render the initial state first
+            setTimeout(() => {
+                for (let i = 1; i < FRAME_COUNT; i++) {
+                    if (isCancelled) break
+                    
+                    // fetchPriority low helps ensure these background frame requests 
+                    // don't block other critical assets like fonts or API calls
+                    if ('fetchPriority' in images[i]) {
+                        images[i].fetchPriority = 'low'
+                    }
+                    images[i].src = getFrameSrc(i + 1)
                 }
-            }
-
-            for (let i = startIndex; i < endIndex; i++) {
-                images[i].onload = checkNextBatch
-                images[i].onerror = checkNextBatch
-                images[i].src = getFrameSrc(i + 1)
-            }
+            }, 50)
         }
+        
+        // Fallback in case onload is missed (though rare if assigned before src)
+        images[0].onerror = () => {
+            if (!isCancelled) setLoaded(true)
+        }
+
+        images[0].src = getFrameSrc(1)
 
         return () => { isCancelled = true }
     }, [])
