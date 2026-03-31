@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 gsap.registerPlugin(ScrollTrigger)
 ScrollTrigger.config({ ignoreMobileResize: true })
 
-const FRAME_COUNT = 266
+const FRAME_COUNT = 270
 const FRAME_PATH = '/hero-frames/ezgif-frame-'
 
 const SECTIONS = [
@@ -64,7 +64,8 @@ function getFrameSrc(index) {
 }
 
 function getSectionIndex(frame) {
-    return Math.min(Math.floor(frame / 53), SECTIONS.length - 1)
+    // 270 frames total, 5 sections -> 54 frames per section
+    return Math.min(Math.floor(frame / 54), SECTIONS.length - 1)
 }
 
 function SectionOverlay({ section, index, activeIndex }) {
@@ -176,8 +177,10 @@ export default function HeroCanvas() {
         const ctx = canvas.getContext('2d')
 
         function resizeCanvas() {
-            canvas.width = window.innerWidth
-            canvas.height = window.innerHeight
+            // Factor in devicePixelRatio for high-res displays like Retina/4K
+            const dpr = window.devicePixelRatio || 1
+            canvas.width = window.innerWidth * dpr
+            canvas.height = window.innerHeight * dpr
             drawFrame(currentFrameRef.current)
         }
 
@@ -192,6 +195,10 @@ export default function HeroCanvas() {
             const dh = ih * scale
             const dx = (cw - dw) / 2
             const dy = (ch - dh) / 2
+
+            // Enable high quality image smoothing to prevent pixelation
+            ctx.imageSmoothingEnabled = true
+            ctx.imageSmoothingQuality = 'high'
 
             ctx.clearRect(0, 0, cw, ch)
             ctx.drawImage(img, dx, dy, dw, dh)
