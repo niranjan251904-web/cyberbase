@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 gsap.registerPlugin(ScrollTrigger)
 ScrollTrigger.config({ ignoreMobileResize: true })
 
-const FRAME_COUNT = 270
+const FRAME_COUNT = 266
 const FRAME_PATH = '/hero-frames/ezgif-frame-'
 
 const SECTIONS = [
@@ -64,7 +64,7 @@ function getFrameSrc(index) {
 }
 
 function getSectionIndex(frame) {
-    return Math.min(Math.floor(frame / 54), SECTIONS.length - 1)
+    return Math.min(Math.floor(frame / 53), SECTIONS.length - 1)
 }
 
 function SectionOverlay({ section, index, activeIndex }) {
