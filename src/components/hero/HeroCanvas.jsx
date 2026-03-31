@@ -121,79 +121,153 @@ function SectionOverlay({ section, index, activeIndex }) {
 }
 
 export default function HeroCanvas() {
+    const canvasRef = useRef(null)
     const containerRef = useRef(null)
-    const videoRef = useRef(null)
+    const imagesRef = useRef([])
+    const currentFrameRef = useRef(0)
     const [loaded, setLoaded] = useState(false)
     const [activeSection, setActiveSection] = useState(0)
     const [scrollMult, setScrollMult] = useState(2.5)
 
     useEffect(() => {
         setScrollMult(window.innerWidth < 768 ? 1.2 : 2.5)
+        
+        const images = []
+        for (let i = 1; i <= FRAME_COUNT; i++) {
+            images.push(new Image())
+        }
+        imagesRef.current = images
 
-        const video = videoRef.current
-        if (!video) return
+        let isCancelled = false
 
-        let cleanupFn = null
-
-        const initScrollTrigger = () => {
+        images[0].onload = () => {
+            if (isCancelled) return
             setLoaded(true)
             
-            const obj = { frame: 0 }
-            const tween = gsap.to(obj, {
-                frame: FRAME_COUNT - 1,
-                snap: 'frame',
-                ease: 'none',
-                scrollTrigger: {
-                    trigger: containerRef.current,
-                    start: 'top top',
-                    end: 'bottom bottom',
-                    scrub: 0.5,
-                },
-                onUpdate: () => {
-                    const frameIndex = Math.round(obj.frame)
+            // Start loading all other frames without sequential batching
+            // Using a slight delay to allow React to render the initial state first
+            setTimeout(() => {
+                for (let i = 1; i < FRAME_COUNT; i++) {
+                    if (isCancelled) break
                     
-                    // Scrub the video hardware directly based on our progress ratio
-                    if (video.duration) {
-                        video.currentTime = (frameIndex / (FRAME_COUNT - 1)) * video.duration
+                    // fetchPriority low helps ensure these background frame requests 
+                    // don't block other critical assets like fonts or API calls
+                    if ('fetchPriority' in images[i]) {
+                        images[i].fetchPriority = 'low'
                     }
-                    
-                    setActiveSection(getSectionIndex(frameIndex))
-                },
-            })
+                    images[i].src = getFrameSrc(i + 1)
+                }
+            }, 50)
+        }
+        
+        // Fallback in case onload is missed (though rare if assigned before src)
+        images[0].onerror = () => {
+            if (!isCancelled) setLoaded(true)
+        }
 
-            cleanupFn = () => {
-                if (tween.scrollTrigger) tween.scrollTrigger.kill()
-                tween.kill()
+        images[0].src = getFrameSrc(1)
+
+        return () => { isCancelled = true }
+    }, [])
+
+    useEffect(() => {
+        if (!loaded) return
+
+        const canvas = canvasRef.current
+        const ctx = canvas.getContext('2d')
+
+        function resizeCanvas() {
+            // Factor in devicePixelRatio for high-res displays like Retina/4K
+            const dpr = window.devicePixelRatio || 1
+            canvas.width = window.innerWidth * dpr
+            canvas.height = window.innerHeight * dpr
+            drawFrame(currentFrameRef.current)
+        }
+
+        function doDraw(img) {
+            const cw = canvas.width
+            const ch = canvas.height
+            const iw = img.naturalWidth
+            const ih = img.naturalHeight
+
+            const scale = Math.max(cw / iw, ch / ih)
+            const dw = iw * scale
+            const dh = ih * scale
+            const dx = (cw - dw) / 2
+            const dy = (ch - dh) / 2
+
+            // Enable high quality image smoothing to prevent pixelation
+            ctx.imageSmoothingEnabled = true
+            ctx.imageSmoothingQuality = 'high'
+
+            ctx.clearRect(0, 0, cw, ch)
+            ctx.drawImage(img, dx, dy, dw, dh)
+        }
+
+        function drawFrame(index) {
+            const img = imagesRef.current[index]
+            if (!img) return
+
+            if (!img.complete || img.naturalWidth === 0) {
+                // Not loaded yet? Set a quick listener/poll to redraw when ready
+                const checkReady = () => {
+                    if (currentFrameRef.current === index) {
+                        if (img.complete && img.naturalWidth > 0) {
+                            doDraw(img)
+                        } else {
+                            setTimeout(checkReady, 50)
+                        }
+                    }
+                }
+                setTimeout(checkReady, 50)
+                return
             }
+
+            doDraw(img)
         }
 
-        // Wait until we have the video metadata (duration, width, height) to begin
-        if (video.readyState >= 1) {
-            initScrollTrigger()
-        } else {
-            video.addEventListener('loadedmetadata', initScrollTrigger)
-        }
+        resizeCanvas()
+        window.addEventListener('resize', resizeCanvas)
+
+        const obj = { frame: 0 }
+        const tween = gsap.to(obj, {
+            frame: FRAME_COUNT - 1,
+            snap: 'frame',
+            ease: 'none',
+            scrollTrigger: {
+                trigger: containerRef.current,
+                start: 'top top',
+                end: 'bottom bottom',
+                scrub: 0.5,
+            },
+            onUpdate: () => {
+                const frameIndex = Math.round(obj.frame)
+                if (frameIndex !== currentFrameRef.current) {
+                    currentFrameRef.current = frameIndex
+                    drawFrame(frameIndex)
+                    setActiveSection(getSectionIndex(frameIndex))
+                }
+            },
+        })
+
+        drawFrame(0)
 
         return () => {
-            if (cleanupFn) cleanupFn()
-            if (video) video.removeEventListener('loadedmetadata', initScrollTrigger)
+            window.removeEventListener('resize', resizeCanvas)
+            if (tween.scrollTrigger) tween.scrollTrigger.kill()
+            tween.kill()
         }
-    }, [])
+    }, [loaded])
 
     return (
         <div
             ref={containerRef}
             className="relative"
-            // Multiply height so the user physically scrolls 4-5 screen heights
             style={{ height: `${FRAME_COUNT * scrollMult}vh` }}
         >
             <div className="sticky top-0 w-full h-[100dvh] overflow-hidden">
-                <video
-                    ref={videoRef}
-                    src="/original.mp4"
-                    preload="auto"
-                    playsInline
-                    muted
+                <canvas
+                    ref={canvasRef}
                     className="w-full h-full object-cover"
                     style={{ display: loaded ? 'block' : 'none' }}
                 />
@@ -214,9 +288,9 @@ export default function HeroCanvas() {
                 )}
 
                 {!loaded && (
-                    <div className="flex items-center justify-center w-full h-full bg-[#0a0a0f]">
+                    <div className="flex items-center justify-center w-full h-full">
                         <div className="font-sans text-[0.7rem] text-[rgba(247,247,251,0.30)] tracking-wider uppercase animate-pulse">
-                            Loading video player...
+                            Loading frames...
                         </div>
                     </div>
                 )}
